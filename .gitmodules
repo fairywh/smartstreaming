@@ -1,0 +1,9 @@
+[submodule "3rdparty/spdlog"]
+	path = 3rdparty/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "3rdparty/FFmpeg"]
+	path = 3rdparty/FFmpeg
+	url = https://github.com/FFmpeg/FFmpeg.git
+[submodule "3rdparty/srt"]
+	path = 3rdparty/srt
+	url = https://github.com/Haivision/srt.git
