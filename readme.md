@@ -2,7 +2,7 @@
 Smartstreaming is a high-performance and scalable streaming media server.
 
 ## 2. design
-
+![image](https://user-images.githubusercontent.com/5512308/147847659-d402fafd-6cf0-4a96-9121-2d5624f70530.png)
    -----------------------
    | io |      Coroutine     |
    ----------------------------
@@ -15,3 +15,4 @@ Smartstreaming is a high-performance and scalable streaming media server.
   | action | push, pull, file delivery  |
   -------------------------------------------
   
+## 3. 
