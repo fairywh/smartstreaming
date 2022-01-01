@@ -15,4 +15,10 @@ Smartstreaming is a high-performance and scalable streaming media server.
   | action | push, pull, file delivery  |
   -------------------------------------------
   
-## 3. 
+## 3. How to use
+
+Build
+```
+git submodule init && git submodule update
+./make.sh
+```
