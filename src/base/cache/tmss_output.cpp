@@ -147,7 +147,7 @@ int OutputHandler::cycle() {
         }
         // check timeout
         if (packet) {
-            tmss_info("get the packet, send 200");
+            tmss_info("get the packet, size={}", packet->get_size());
             mux->send_status(200);
             ret = mux->handle_output(packet);
             if (ret != error_success) {

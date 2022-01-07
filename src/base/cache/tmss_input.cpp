@@ -81,6 +81,7 @@ int InputHandler::origin_start() {
         tmss_info("ingest origin success,{}", origin_request.to_str());
     }
 
+    tmss_info("origin start.");
     return ret;
 }
 
@@ -93,7 +94,9 @@ int InputHandler::fetch_stream(char* buff, int wanted_size) {
     }
     tmss_info("read data, {}, {}", read_size, PrintBuffer(buff, read_size));
     return read_size;   //  */
-    return client->read_data(buff, wanted_size);
+    int read_size = client->read_data(buff, wanted_size);
+    tmss_info("read data, {}/{}", read_size, wanted_size);
+    return read_size;
 }
 
 void InputHandler::init_conn(std::shared_ptr<IClientConn> conn) {
@@ -247,8 +250,10 @@ int InputHandler::cycle_interleave() {
             tmss_info("get packet from input failed, {}", ret);
             break;
         }
-        tmss_info("get a new packet");
-        enqueue(packet);
+        if (packet) {
+            tmss_info("get a new packet, size={}", packet->get_size());
+            enqueue(packet);
+        }
     }
     return ret;
 }

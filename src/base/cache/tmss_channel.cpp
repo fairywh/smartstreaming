@@ -132,6 +132,7 @@ void Channel::del_all_output() {
 
 int Channel::run() {
     if (status == EChannelStart) {
+        tmss_info("already start");
         return error_success;
     }
     int ret = on_init();

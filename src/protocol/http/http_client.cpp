@@ -111,7 +111,7 @@ int HttpClient::read_data(char* buf, int size) {
         tmss_error("fetch stream failed, ret={}", read_size);
         return read_size;
     }
-    tmss_info("read data, {}, {}", read_size, PrintBuffer(buf, read_size));
+    tmss_info("read data, {}/{}, {}", read_size, size, PrintBuffer(buf, read_size));
     return read_size;
 }
 

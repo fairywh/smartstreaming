@@ -103,6 +103,7 @@ int TcpStreamConn::read(char* buf, int size) {
         tmss_info("tcp read not complete, id{}, {}/{}", get_id(), ret, size);
     }
     recv_bytes += ret;
+    tmss_info("tcp read, {}/{}", ret, size);
     return ret;
 }
 

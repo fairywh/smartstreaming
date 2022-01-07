@@ -70,6 +70,7 @@ int BaseDeMux::on_ingest(int content_length, const std::string& data_header) {
         ret = error_ffmpeg_init_input;
         return ret;
     }
+    tmss_info("ingest success");
     return ret;
 }
 

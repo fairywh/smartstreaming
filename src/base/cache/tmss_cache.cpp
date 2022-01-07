@@ -4,6 +4,7 @@
  */
 
 #include "tmss_cache.hpp"
+#include <log/log.hpp>
 
 namespace tmss {
 PacketQueue::PacketQueue(int size) : max_size(size) {
@@ -18,6 +19,7 @@ int PacketQueue::enqueue(std::shared_ptr<IPacket> packet) {
     int ret = error_success;
     queue.push(packet);
     st_cond_broadcast(cond);
+    tmss_info("enqueue a packet, size={}", packet->get_size());
     return ret;
 }
 
@@ -31,7 +33,7 @@ int PacketQueue::dequeue(std::shared_ptr<IPacket> &packet, int timeout_us) {
     }
     packet = queue.front();
     queue.pop();
-
+    tmss_info("get a packet from queue, size={}", packet->get_size());
     return ret;
 }
 

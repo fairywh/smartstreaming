@@ -1,11 +1,6 @@
-/* Copyright [2020] <Tencent, China>
- *
- * =====================================================================================
- *        Version:  1.0
- *        Created:  on 2021/3/26.
- *        Author:  weideng.
- *
- * =====================================================================================
+/*
+ * TMSS
+ * Copyright (c) 2021 rainwu
  */
 
 #include <io/io_buffer.hpp>
@@ -301,9 +296,10 @@ int Buffer::seek_read(int len) {
         ret = error_buffer_read;
         return ret;
     }
-    if (len < read_left()) {
+    if (len <= read_left()) {
     } else {
         //  len = read_left();
+        tmss_error("seek_len={}, read_left={}", len, read_left());
         ret = error_buffer_read;
         return ret;
     }
@@ -319,9 +315,10 @@ int Buffer::seek_write(int len) {
         ret = error_buffer_read;
         return ret;
     }
-    if (len < write_left()) {
+    if (len <= write_left()) {
     } else {
         //  len = write_left();
+        tmss_error("seek_len={}, write_left={}", len, write_left());
         ret = error_buffer_read;
         return ret;
     }
@@ -377,11 +374,14 @@ int IOBuffer::read_bytes(char* dst, int len) {
 
         // read to buffer
         int continuous_write_left_size = buffer->continuous_write_left();
-        int read_size_from_reader = reader->read(buffer->wcurrent(), continuous_write_left_size);
+        int read_size_from_reader = reader->read(buffer->wcurrent(),
+            continuous_write_left_size);
         if (read_size_from_reader < 0) {
             tmss_error("read from connection error,ret={}", read_size_from_reader);
             return read_size_from_reader;
         }
+        tmss_info("read from reader, {}/{}",
+            read_size_from_reader, continuous_write_left_size);
         buffer->seek_write(read_size_from_reader);
 
         wanted_size = need_read_size;
@@ -391,7 +391,7 @@ int IOBuffer::read_bytes(char* dst, int len) {
         tmss_info("write to cache and read, write={},need_read={}, once_read={}, read={}",
             read_size_from_reader, need_read_size, wanted_size, read_size);
     }
-    tmss_info("read_size={}", read_size);
+    tmss_info("read_size={}/{}", read_size, len);
     return read_size;
 }
 

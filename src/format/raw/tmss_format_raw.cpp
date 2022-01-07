@@ -53,7 +53,11 @@ int RawDeMux::handle_input(std::shared_ptr<IPacket>& packet) {
         int read_size = read_packet_func(opaque,
             reinterpret_cast<uint8_t*>(buffer->wcurrent()),
             continuous_write_left_size);
-        buffer->seek_write(read_size);
+        int ret = buffer->seek_write(read_size);
+        if (ret != error_success) {
+            tmss_error("write error, ret={}", ret);
+            //  return ret;
+        }
         if (min_read_size > buffer->read_left()) {
             // to do
         } else {
