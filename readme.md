@@ -6,12 +6,17 @@ Smartstreaming is a high-performance and scalable streaming media server.
 
 ## 3. How to Use
 
-```Build
-git submodule init && git submodule update
-./make.sh
-```Start
+Build
+ ```
+ git submodule init && git submodule update
+ ./make.sh
+ ```
+ Start
+```
 ./tmss -p{$port}
-```Test
+```
+Test
 Initiate an http request to the server, with the source address filled in the Http Host. The server receives the request, requests the source reversely, and distributes it to the client. Multiple client requests will converge back to the source.
-
+```
 curl -v "http://127.0.0.1:{$port}/{$path}/{$stream}.{$ext}" -H "Host: XXX"
+```
