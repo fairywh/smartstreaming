@@ -1,12 +1,17 @@
-/*
- * TMSS
- * Copyright (c) 2021 rainwu
+/* Copyright [2020] <Tencent, China>
+ *
+ * =====================================================================================
+ *        Version:  1.0
+ *        Created:  on 2021/3/26.
+ *        Author:  weideng.
+ *
+ * =====================================================================================
  */
 
 #include <io/io_buffer.hpp>
 #include <defs/err.hpp>
 #include <log/log.hpp>
-
+#include <util/util.hpp>
 
 namespace tmss {
 Buffer::Buffer() {
@@ -38,7 +43,7 @@ int Buffer::read_left() {
 
 int Buffer::continuous_write_left() {
     if (wpos >= rpos) {
-        return size - wpos;
+        return Min(size - wpos, write_left());
     } else {
         return write_left();
     }

@@ -22,7 +22,7 @@ unsigned int CHttp::getContentLen() {
     return content_len_;
 }
 
-int CHttp::parseRequest(const std::string& data) {
+int CHttp::parse_request(const std::string& data) {
     // find space
     std::size_t found = data.find(" ");
     if (found == std::string::npos) {
@@ -188,6 +188,15 @@ int CHttp::parseGetRequest(const std::string & data, int &is_crossdomain_request
                 request_host_ = data.substr(request_host_start, request_host_end_found - request_host_start);
             }
         }
+
+        std::string request_codec_string = "X-Codec: ";
+        std::size_t request_codec_found = data.find(request_codec_string);
+        if (request_codec_found == std::string::npos) {
+            is_transcode_ = false;
+        } else {
+            is_transcode_ = true;
+        }
+
         return 0;
     }
 }
@@ -279,11 +288,16 @@ int CHttp::buildHttpGetRequest(const std::string& param,
     const std::string& name) {
     // str_req = str_req +  "GET " + req_data + " HTTP/1.1\r\n";
     // str_req += "Accept: */*\r\nAccept-Charset: GBK,utf-8*\r\nAccept-Language: zh-CN,zh\r\nHost: ";
-    str_req = str_req + "GET /" + path + "/" + name + "?" + param;
+    str_req = str_req + "GET /" + path + "/" + name;
+    if (param.length() > 0) {
+        str_req = str_req  + "?" + param;
+    }
     str_req += " HTTP/1.1\r\nUser-Agent: curl/7.15.1 (linux) OpenSSL/0.9.8a zlib/1.2.3 libidn/0.6.0";
     // str_req += "\r\nX-Callback-Host: http://";
-    str_req += "\r\nHost: ";
-    str_req += host;
+    if (host.length() > 0) {
+        str_req += "\r\nHost: ";
+        str_req += host;
+    }
     // str_req += "\r\nX-Callback-App: douyu\r\nX-Callback-Random: 35756";
     // str_req += "\r\nHost: ";
     // str_req += "OpenCallback";

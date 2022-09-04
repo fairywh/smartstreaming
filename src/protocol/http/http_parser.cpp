@@ -63,12 +63,25 @@ int HttpParser::parse_request(std::shared_ptr<IReader> reader,
     // default, to do
     new_req->type = ERequestTypePlay;
 
-    http.parseRequest(std::string(buff));
+    http.parse_request(std::string(buff));
     new_req->vhost = http.Host();
     new_req->name = http.Name();
     new_req->path = http.Folder();
     new_req->params = http.QueryString();
     new_req->ext = http.ext();
+    new_req->is_transcode = http.is_transcode();
+
+    std::vector<std::string> tmp_querys;
+    split_string(new_req->params, "&", tmp_querys);
+
+    for (auto & key_value : tmp_querys) {
+        std::vector<std::string> kv;
+        split_string(key_value, "=", kv);
+
+        if (kv.size() == 2) {
+            new_req->params_map[kv[0]] = url_decode(kv[1]);
+        }
+    }
 
     req = new_req;
 

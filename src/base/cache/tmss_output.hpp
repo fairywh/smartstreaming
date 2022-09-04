@@ -6,9 +6,9 @@
 #pragma once
 
 #include <tmss_cache.hpp>
-#include <format/context.hpp>
-#include <format/mux.hpp>
-#include <format/demux.hpp>
+#include <format/base/context.hpp>
+#include <format/base/mux.hpp>
+#include <format/base/demux.hpp>
 #include <net/tmss_conn.hpp>
 #include <protocol/client.hpp>
 
@@ -35,7 +35,8 @@ class OutputHandler : public PacketQueue, public ICoroutineHandler {
     std::shared_ptr<IClient> client;
 
     std::shared_ptr<IMux> mux;
-    std::shared_ptr<IContext> context;
+    std::shared_ptr<IContext> input_context;
+    std::shared_ptr<IContext> output_context;
     bool        is_stop;
     EOutputType output_type;
     EStatusOutput status;

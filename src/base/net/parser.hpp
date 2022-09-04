@@ -10,7 +10,7 @@
 
 #pragma once
 #include <string>
-
+#include <map>
 
 namespace tmss {
 
@@ -34,9 +34,14 @@ class Request {
     ERequestType type;
     std::string format;   // usually format is ext in http
 
+    std::map<std::string, std::string> params_map;
+
     std::string to_str() {
         return vhost + "|" + path + "|" + name + "|" + params;
     }
+
+    bool is_transcode;
+    std::string ext;
 };
 
 class Response {

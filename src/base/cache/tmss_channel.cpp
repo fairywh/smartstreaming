@@ -61,7 +61,6 @@ int Channel::add_input(std::shared_ptr<PacketQueue> new_input) {
     channel_exit_time = -1;
 
     input_queue.push_back(new_input);
-
     return ret;
 }
 
@@ -88,10 +87,10 @@ int Channel::add_output(std::shared_ptr<PacketQueue> new_output) {
 
     output_queue.push_back(new_output);
 
-    if (status == EChannelStart) {
+    //  if (status == EChannelStart) {
         auto output = std::dynamic_pointer_cast<OutputHandler>(new_output);
         output->init_output(input_context);
-    }
+    //  }
     return ret;
 }
 
@@ -105,23 +104,8 @@ int Channel::del_output(std::shared_ptr<PacketQueue> output) {
         output_queue.erase(iter);
         tmss_info("output delete");
     }
-    if (output_queue.empty() && (idle_at == -1)) {
-        tmss_info("output empty");
-        // idle
-        bool no_push = true;
-        for (auto queue : this->input_queue) {
-            if (queue) {
-                auto input = std::dynamic_pointer_cast<InputHandler>(queue);
-                if (input->get_type() == EInputPublish) {
-                    no_push = false;
-                }
-            }
-        }
-        if (no_push) {
-            idle_at = get_cache_time();
-            tmss_info("channel idle");
-        }
-    }
+
+    check_and_sleep();
 
     return error_success;
 }
@@ -187,6 +171,14 @@ int Channel::on_init() {
         }
     }
     // init output to cache
+    if (segment_cache) {
+        segment_cache->set_input_context(input_context);
+        /*ret = cache->init_format();
+        if (ret != error_success) {
+            tmss_error("cache init error,ret={}", ret);
+            return ret;
+        }   //*/
+    }
 
     for (auto queue : this->input_queue) {
         if (queue) {
@@ -209,18 +201,35 @@ int Channel::on_process() {
 int Channel::on_cycle(std::shared_ptr<IPacket> packet) {
     int ret = error_success;
     // segment, like flv->hls
+    if (segment_cache) {
+        ret = segment_cache->handle_packet(packet);
+        if (ret != error_success) {
+            tmss_error("segment error, ret={}", ret);
+            return ret;
+        }
+    }
     return ret;
 }
 
 void Channel::fetch(std::vector<std::shared_ptr<IPacket>> &packets, int timeout_us) {
+    int ret = error_success;
     for (auto input : input_queue) {
         std::shared_ptr<IPacket> packet;
-        input->dequeue(packet, timeout_us);
-        packets.push_back(packet);
+        ret = input->dequeue(packet, timeout_us);
+        if (ret != error_success) {
+            tmss_error("dequeue error, ret={}", ret);
+            return;
+        }
+        if (packet) {
+            packets.push_back(packet);
+        }
     }
 }
 
 void Channel::dispatch(std::shared_ptr<IPacket> packet) {
+    if (!packet) {
+        return;
+    }
     for (auto output : output_queue) {
         output->enqueue(packet);
     }
@@ -252,11 +261,13 @@ int Channel::on_stop() {
     for (auto queue : input_queue) {
         auto input = std::dynamic_pointer_cast<InputHandler>(queue);
         input->set_stop();
+        tmss_info("set input stop");
     }
     for (auto queue : output_queue) {
         auto output = std::dynamic_pointer_cast<OutputHandler>(queue);
         output->send_no_msg();
         output->set_stop();
+        tmss_info("set output stop");
     }
     channel_exit_time = get_cache_time();
 
@@ -286,6 +297,44 @@ std::string Channel::get_key() {
 
 void Channel::wake_up() {
     idle_at = -1;
+}
+
+void Channel::check_and_sleep() {
+    if ((idle_at == -1) && output_queue.empty() && !segment_cache) {
+        tmss_info("output empty");
+        // idle
+        bool no_push = true;
+        for (auto queue : this->input_queue) {
+            if (queue) {
+                auto input = std::dynamic_pointer_cast<InputHandler>(queue);
+                if (input->get_type() == EInputPublish) {
+                    no_push = false;
+                }
+            }
+        }
+        if (no_push) {
+            idle_at = get_cache_time();
+            tmss_info("channel idle");
+        }
+    }
+}
+
+int Channel::add_segemt_cache(std::shared_ptr<SegmentsCache> cache) {
+    int ret = error_success;
+
+    wake_up();
+    channel_exit_time = -1;
+    this->segment_cache = cache;
+
+    return ret;
+}
+
+int Channel::del_segment_cache() {
+    this->segment_cache = nullptr;
+
+    check_and_sleep();
+
+    return error_success;
 }
 
 ChannelPool::ChannelPool() : ICoroutineHandler("channel_pool") {

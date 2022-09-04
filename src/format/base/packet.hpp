@@ -8,15 +8,17 @@
  * =====================================================================================
  */
 
-
-#include <format/mux.hpp>
+#pragma once
 
 namespace tmss {
-std::shared_ptr<IContext> IMux::get_context() {
-    return ctx;
-}
-void IMux::set_context(std::shared_ptr<IContext> context) {
-    ctx = context;
-}
+class IPacket {
+ public:
+    virtual ~IPacket() = default;
 
-}   // namespace tmss
+ public:
+    virtual char*  buffer() = 0;
+    virtual int     get_size()  = 0;
+    virtual int64_t timestamp() = 0;
+    virtual bool is_key_frame() = 0;
+};
+}  // namespace tmss

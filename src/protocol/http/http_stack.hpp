@@ -28,6 +28,7 @@ class CHttp {
     std::string forwarded_client_ip_;        // X-Forwarded-For
     std::string request_host_;
     std::string ext_;   // streamid.flv, ext is flv
+    bool is_transcode_;     //  to do
 
     int response_status;
 
@@ -45,7 +46,8 @@ class CHttp {
     std::string ForwardedIp()      { return forwarded_client_ip_;}
     std::string Host()          { return request_host_;}
     std::string ext()           { return ext_; }
-    int parseRequest(const std::string& data);
+    bool is_transcode()     { return is_transcode_; }
+    int parse_request(const std::string& data);
     int parsePostRequest(const std::string& data);
     int parseGetRequest(const std::string & data, int &is_crossdomain_request);
     int checkHttpInputWithLength(const std::string & data);

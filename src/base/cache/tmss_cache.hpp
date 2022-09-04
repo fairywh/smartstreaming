@@ -13,7 +13,8 @@
 #include <iostream>
 #include <map>
 #include <defs/err.hpp>
-#include <format/packet.hpp>
+#include <format/base/packet.hpp>
+#include <format/base/frame.hpp>
 #include <defs/tmss_def.hpp>
 
 namespace tmss {
@@ -52,12 +53,15 @@ class PacketQueue {
     explicit PacketQueue(int size);
     virtual ~PacketQueue();
     virtual int enqueue(std::shared_ptr<IPacket> packet);
+    virtual int enqueue(std::shared_ptr<IFrame> frame);
     virtual int dequeue(std::shared_ptr<IPacket> &packet, int timeout_us = -1);
+    virtual int dequeue(std::shared_ptr<IFrame> &frame, int timeout_us = -1);
     virtual int send_no_msg();
     virtual bool can_use();
 
  private:
     std::queue<std::shared_ptr<IPacket>> queue;
+    std::queue<std::shared_ptr<IFrame>> frame_queue;
     st_cond_t cond;
     int max_size;
 };

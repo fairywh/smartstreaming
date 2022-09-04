@@ -13,8 +13,7 @@
 #include <media_source_handler.hpp>
 #include "http_server.hpp"
 #include <format/raw/tmss_format_raw.hpp>
-#include <format/flv/tmss_format_flv.hpp>
-#include <format/ts/tmss_format_ts.hpp>
+#include <format/ffmpeg/tmss_format_base.hpp>
 #include <transport/tmss_trans_tcp.hpp>
 #include <log/log.hpp>
 #include <util/timer.hpp>
@@ -89,9 +88,10 @@ int MediaSource::handle_cycle(std::shared_ptr<Channel> channel) {
             cache[AUDIO_HEADER] = packet;
         }
         #endif
-        channel->dispatch(packet);
-
-        channel->on_cycle(packet);
+        if (packet) {
+            channel->dispatch(packet);
+            channel->on_cycle(packet);
+        }
     }
     return ret;
 }
@@ -191,8 +191,16 @@ int MediaSource::init(int num, char** param) {
 int MediaSource::handle_play(std::shared_ptr<IClientConn> conn,
         std::shared_ptr<Request> req,
         std::shared_ptr<IServer> server) {
-    // check config
-    if (true) {
+    // check config, to do
+
+    //  to do
+    req->format = req->ext;
+
+    //  test
+    std::string mode = req->params_map["mode"];
+    if (mode == "hls") {
+        return handle_play_segment(conn, req, server);
+    } else if (mode == "live") {
         return handle_play_stream(conn, req, server);
     } else {
         return handle_play_file(conn, req, server);
@@ -216,18 +224,8 @@ int MediaSource::handle_play_stream(std::shared_ptr<IClientConn> conn,
     output->init_conn(conn);
 
     // create mux based on request
-    std::shared_ptr<IMux> muxer;
-    std::shared_ptr<IContext> context;
-    if (req->format == "RAW") {  // to do
-        muxer = std::make_shared<RawMux>();
-        context = std::make_shared<IContext>();
-    } else if (req->format == "mpegts") {
-        muxer = std::make_shared<MpegTsMux>();
-        context = std::make_shared<TmssAVFormatContext>();
-    } else {
-        muxer = std::make_shared<FlvMux>();
-        context = std::make_shared<TmssAVFormatContext>();
-    }
+    std::shared_ptr<IMux> muxer = create_mux_by_ext(req->ext);
+    std::shared_ptr<IContext> context = create_context_by_ext(req->ext);
     output->init_format(muxer);
     std::shared_ptr<HttpClient> client = std::make_shared<HttpClient>();
     client->init(conn);
@@ -237,6 +235,8 @@ int MediaSource::handle_play_stream(std::shared_ptr<IClientConn> conn,
     output->set_type(EOutputPlay);
 
     channel->add_output(output);
+
+    tmss_info("handle_play_stream");
 
     if (channel->get_status() == EChannelStart) {
         tmss_info("channel is already running");
@@ -249,11 +249,13 @@ int MediaSource::handle_play_stream(std::shared_ptr<IClientConn> conn,
         if (ret != error_success) {
             tmss_error("channel run failed,ret={}", ret);
             channel->on_stop();
-            return ret;
+            //  return ret;
         }
     }
 
     output->run();
+
+    tmss_info("handle_play_stream");
 
     return ret;
 }
@@ -280,7 +282,6 @@ int MediaSource::handle_publish(std::shared_ptr<IClientConn> conn,
 
     std::shared_ptr<IContext> context = std::make_shared<IContext>();
     input->set_context(context);
-
     input->set_type(EInputPublish);
 
     channel->add_input(input);
@@ -331,13 +332,11 @@ int MediaSource::create_origin_stream(std::shared_ptr<Channel> channel,
     std::string origin_host = req->vhost;   //  to do
     std::string origin_path = req->path;
     std::string stream = req->name;
-    std::string ext;
     //  parse streamid and ext
     if (true) {
         std::size_t found = stream.find(".");
         if (found == std::string::npos) {
         } else {
-            ext = stream.substr(found + 1);
             stream = stream.substr(0, found);
         }
     }
@@ -349,16 +348,9 @@ int MediaSource::create_origin_stream(std::shared_ptr<Channel> channel,
     std::shared_ptr<InputHandler> input = std::make_shared<InputHandler>(input_pool, channel);
 
     // check req->format
-    std::shared_ptr<IContext> context;
-    std::shared_ptr<IDeMux> demuxer;
-    if (req->format == "RAW") {  // to do
-        demuxer = std::make_shared<RawDeMux>();
-        context = std::make_shared<IContext>();
-    } else {
-        demuxer = std::make_shared<FlvDeMux>();
-        context = std::make_shared<TmssAVFormatContext>();
-        ext = "flv";
-    }
+    std::string origin_format = "flv";    //  to do
+    std::shared_ptr<IContext> context = create_context_by_format(origin_format);
+    std::shared_ptr<IDeMux> demuxer = create_demux_by_format(origin_format);
 
     std::shared_ptr<HttpClient> origin_client = std::make_shared<HttpClient>();
     origin_client->init(origin_conn);
@@ -369,10 +361,20 @@ int MediaSource::create_origin_stream(std::shared_ptr<Channel> channel,
     input->set_type(EInputOrigin);
 
     std::string origin_ip = origin_host;     //  to do
+    if (req->params_map["origin_host"].length() > 0) {
+        origin_ip = req->params_map["origin_host"];
+    }
     int origin_port = 80;
+    if (req->params_map["origin_port"].length() > 0) {
+        origin_port = atoll(req->params_map["origin_port"].c_str());
+    }
+    if (req->params_map["origin_param"] == "no") {
+        param = "";
+    }
+    tmss_info("origin_host={}, origin_ip={}, origin_port={}", origin_ip, origin_ip, origin_port);
     Address address(origin_ip, origin_port);
     //  input->set_origin_address(address);
-    input->set_origin_info(address, origin_host, origin_path, stream, ext, param);
+    input->set_origin_info(address, origin_host, origin_path, stream, origin_format, param);
 
     channel->add_input(input);
 
@@ -400,12 +402,13 @@ int MediaSource::create_forward(std::shared_ptr<Channel> channel,
     output->init_conn(forward_conn);
 
     // create mux based on request
-    std::shared_ptr<IMux> muxer;
-    if (req->format == "RAW") {  // to do
+    std::string output_ext = "";
+    std::shared_ptr<IMux> muxer = create_mux_by_ext(output_ext);
+    /*if (req->format == "RAW") {  // to do
         muxer = std::make_shared<RawMux>();
     } else {
         muxer = std::make_shared<RawMux>();
-    }
+    }   //*/
     output->init_format(muxer);
 
     std::string forward_host = req->vhost;
@@ -415,7 +418,7 @@ int MediaSource::create_forward(std::shared_ptr<Channel> channel,
     output->set_forward_address(address);
     output->set_forward_url(forward_url);
 
-    std::shared_ptr<IContext> context = std::make_shared<IContext>();
+    std::shared_ptr<IContext> context = create_context_by_ext(output_ext);
     output->set_context(context);
 
     output->set_type(EOutputForawrd);
@@ -505,6 +508,111 @@ int MediaSource::handle_play_file(std::shared_ptr<IClientConn> conn,
     std::shared_ptr<IContext> context = std::make_shared<IContext>();
     muxer->init_output(out_buf, out_buf_size,
         conn.get(), file_output_func, static_cast<void*>(context.get()), static_cast<void*>(context.get()));
+
+    int offset = 0;
+    while (!(file->complete()) || (offset < file->get_total_length())) {
+        char buffer[1024];
+        int size = sizeof(buffer);
+        ret = file->seek_range(buffer, size, offset);     // timeout
+        if (ret != error_success) {
+            tmss_error("file read error,{},offset={}", ret, offset);
+            break;
+        }
+        offset += size;
+        ret = muxer->send_status(200);
+        if (ret != error_success) {
+            tmss_error("send http header error,{}", ret);
+            break;
+        }
+
+        std::shared_ptr<SimplePacket> raw_packet =
+            std::make_shared<SimplePacket>(buffer, size);
+        ret = muxer->handle_output(raw_packet);
+        if (ret < 0) {
+            tmss_error("file send error,{}", ret);
+            break;
+        }
+        tmss_info("size={},offset={},file_length={},file_complete={}",
+            size, offset, file->get_total_length(), file->complete());
+    }
+
+    tmss_info("file send complete");
+
+    conn->set_stop();
+
+    return ret;
+}
+
+int MediaSource::handle_play_segment(std::shared_ptr<IClientConn> conn,
+        std::shared_ptr<Request> req,
+        std::shared_ptr<IServer> server) {
+    int ret = error_success;
+    // get or create Channel
+    std::string stream_key = create_channel_key(req);
+    tmss_info("handle_play_stream,stream_key={}", stream_key.c_str());
+    std::shared_ptr<Channel> channel;
+    std::shared_ptr<ChannelMgr> channel_mgr = server->get_channel_mgr();
+    channel_mgr->fetch_or_create_channel(stream_key, channel);
+    channel->init_user_ctrl(shared_from_this());
+
+    std::shared_ptr<SegmentsCache> segment_cache = channel->segment_cache;
+    if (!segment_cache) {
+        segment_cache = std::make_shared<SegmentsCache>(3, 10);
+        channel->add_segemt_cache(segment_cache);
+
+        // segment
+        segment_cache->set_format(req->format);
+        //  segment_cache->set_output_context(context);
+        segment_cache->init();
+        channel->add_segemt_cache(segment_cache);
+        tmss_info("handle_play_segment");
+    }
+    if (channel->get_status() == EChannelStart) {
+        tmss_info("channel is already running");
+    } else {
+        // check if it need origin
+        create_origin_stream(channel, req, server);
+
+        // start channel
+        ret = channel->run();
+        if (ret != error_success) {
+            tmss_error("channel run failed,ret={}", ret);
+            channel->on_stop();
+            //  return ret;
+        }
+    }
+
+    tmss_info("handle_play_segment");
+
+    std::string key =
+        req->vhost + req->path + req->name;
+    std::shared_ptr<IMux> muxer = std::make_shared<RawMux>();
+    int out_buf_size = 1024 * 16;
+    uint8_t* out_buf = new uint8_t[out_buf_size];
+    std::shared_ptr<IContext> context = std::make_shared<IContext>();
+    muxer->init_output(out_buf, out_buf_size,
+        conn.get(), file_output_func, static_cast<void*>(context.get()), static_cast<void*>(context.get()));
+
+    std::shared_ptr<FileCache> file_cache = segment_cache->get_file_cache();
+    std::shared_ptr<File> file = file_cache->get_file(key);
+
+    int64_t current_time_ms = get_cache_time() / 1000;
+    if (file &&
+        (((current_time_ms - file->get_update_time()) < 1000 * 1000) || !file->complete())) {
+        // get the file, when the file is complete and not outdate
+        tmss_info("get the file");
+    } else {
+        // check if it is need origin
+        tmss_info("not find the file or expire");
+        ret = muxer->send_status(404);
+        if (ret != error_success) {
+            tmss_error("send http header error,{}", ret);
+            return ret;
+        }
+        tmss_info("send http 404");
+        conn->close();
+        return ret;
+    }
 
     int offset = 0;
     while (!(file->complete()) || (offset < file->get_total_length())) {

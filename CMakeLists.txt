@@ -57,7 +57,7 @@ add_complied_lib(libavfilter FFmpeg/libavfilter/libavfilter.a FFmpeg)
 add_complied_lib(libavutil FFmpeg/libavutil/libavutil.a FFmpeg)
 add_complied_lib(libswscale FFmpeg/libswscale/libswscale.a FFmpeg)
 add_complied_lib(libswresample FFmpeg/libswresample/libswresample.a FFmpeg)
-
+add_complied_lib(libx264 x264/libx264.a x264)
 
 #include_directories(${3RD_PARTY_DIR}/st/include)
 
@@ -75,9 +75,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/base/net)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/base/util)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/base)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ffmpeg)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/raw)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/flv)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ts)
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/flv)
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ts)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol/http)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol/rtmp)
@@ -97,9 +98,10 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/base/net SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/base/util SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/base SRCS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ffmpeg SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/raw SRCS)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/flv SRCS)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ts SRCS)
+#aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/flv SRCS)
+#aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/format/ts SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol/http SRCS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/protocol/rtmp SRCS)
@@ -131,5 +133,6 @@ TARGET_LINK_LIBRARIES(tmss
         libavutil
         libswscale
         libswresample
+	    libx264
         pthread
         z)

@@ -11,8 +11,9 @@
 
 #include <memory>
 #include <io/io_buffer.hpp>
-#include <format/context.hpp>
-#include <format/packet.hpp>
+#include <format/base/context.hpp>
+#include <format/base/packet.hpp>
+#include <format/base/frame.hpp>
 #include <tmss_conn.hpp>
 
 namespace tmss {
@@ -28,6 +29,8 @@ class IMux {
         void * input_context, void* output_context) = 0;
 
     virtual int handle_output(std::shared_ptr<IPacket> packet) = 0;
+
+    virtual int handle_output(std::shared_ptr<IFrame> frame) = 0;
 
     virtual int play(std::shared_ptr<IClientConn> conn) = 0;
 

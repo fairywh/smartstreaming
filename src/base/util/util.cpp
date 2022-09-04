@@ -50,7 +50,7 @@ int64_t GetNowTimeByMs() {
 
 std::string PrintBuffer(const void *buffer, unsigned int size) {
     std::string result;
-    for (unsigned int tmp = 0; tmp < size; tmp ++) {
+    for (unsigned int tmp = 0; tmp < size; tmp++) {
         char temp[4];
         void *const_p = const_cast<void*>(buffer);
         char *p = static_cast<char*>(const_p);
@@ -102,5 +102,94 @@ void random_generate(char* bytes, int size) {
     }
 }
 
+/*******************************************************************************
+ * 函数名称  : SplitInt
+ * 功能描述  : 分割字符串为整型
+ * 函数参数  : const string & srcStr
+ * 函数参数  : const string & splitStr
+ * 函数参数  : vector<int> & destVec
+ * 返 回 值  : int
+ *******************************************************************************/
+int split_int(const std::string &srcStr, const std::string &splitStr, std::vector<int> &destVec) {
+    if (srcStr.length() == 0) {
+        return 0;
+    }
+    size_t oldPos = 0;
+    size_t newPos = 0;
+    std::string tempData;
+    while (1) {
+        newPos = srcStr.find(splitStr, oldPos);
+        if (newPos != std::string::npos) {
+            tempData = srcStr.substr(oldPos, newPos - oldPos);
+            destVec.push_back(from_string<int>(tempData));
+            oldPos = newPos + splitStr.size();
+        } else if (oldPos <= srcStr.size()) {
+            tempData = srcStr.substr(oldPos);
+            destVec.push_back(from_string<int>(tempData));
+            break;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
+/*******************************************************************************
+* 函数名称  : SplitString
+* 功能描述  : 分割字符串
+* 函数参数  : const string & srcStr
+* 函数参数  : const string & splitStr
+* 函数参数  : vector<string> & destVec
+* 返 回 值  : int
+*******************************************************************************/
+int split_string(const std::string &srcStr, const std::string &splitStr, std::vector<std::string> &destVec) {
+    if (srcStr.length() == 0) {
+        return 0;
+    }
+    size_t oldPos = 0;
+    size_t newPos = 0;
+    std::string tempData;
+    while (1) {
+        newPos = srcStr.find(splitStr, oldPos);
+        if (newPos != std::string::npos) {
+            tempData = srcStr.substr(oldPos, newPos - oldPos);
+            destVec.push_back(tempData);
+            oldPos = newPos + splitStr.size();
+        } else if (oldPos <= srcStr.size()) {
+            tempData = srcStr.substr(oldPos);
+            destVec.push_back(tempData);
+            break;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
+unsigned char tp_hex(const unsigned char &x) {
+        return x > 9 ? x - 10 + 'A': x + '0';
+}
+
+unsigned char from_hex(const unsigned char &x) {
+        return isdigit(x) ? x-'0' : x-'A'+10;
+}
+
+std::string url_decode(const std::string &sIn) {
+    std::string sOut;
+    for (size_t ix = 0; ix < sIn.size(); ix++) {
+        unsigned char ch = 0;
+        if (sIn[ix] == '%') {
+            ch = (from_hex(sIn[ix+1]) << 4);
+            ch |= from_hex(sIn[ix+2]);
+            ix += 2;
+        } else if (sIn[ix] == '+') {
+            ch = ' ';
+        } else {
+            ch = sIn[ix];
+        }
+        sOut += static_cast<char>(ch);
+    }
+    return sOut;
+}
 }   // namespace tmss
 

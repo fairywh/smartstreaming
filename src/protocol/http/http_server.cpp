@@ -150,13 +150,14 @@ int HttpConnHandler::cycle() {
         req->name,
         req->ext);
     // set format
-    if (req->ext == "flv") {     // test
+    /*if (req->ext == "flv") {     // test
         req->format = "flv";
+        // req->format = "RAW";
     } else if (req->ext == "ts") {
         req->format = "mpegts";
     } else {
         req->format = "RAW";
-    }
+    }   //*/
 
     // tmss_info("output_conn ref_count={}", conn.use_count());
 

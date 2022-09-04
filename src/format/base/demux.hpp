@@ -11,8 +11,9 @@
 
 #include <memory>
 #include <io/io_buffer.hpp>
-#include <format/context.hpp>
-#include <format/packet.hpp>
+#include <format/base/context.hpp>
+#include <format/base/packet.hpp>
+#include <format/base/frame.hpp>
 #include <net/tmss_conn.hpp>
 
 namespace tmss {
@@ -31,6 +32,8 @@ class IDeMux {
         void * input_context) = 0;
 
     virtual int handle_input(std::shared_ptr<IPacket>& packet) = 0;
+
+    virtual int handle_input(std::shared_ptr<IFrame>& frame) = 0;
 
     /*virtual int ingest(const std::string& origin_host,
         const std::string& origin_path,

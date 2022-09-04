@@ -62,6 +62,7 @@ typedef uint64_t utime_t;
 #define error_buffer_not_enough  12003
 #define error_ingest_no_input    13001
 #define error_ingest_no_client   13002
+#define error_queue_is_empty     13101
 
 // protocol
 #define error_rtmp_complex_handshake_not_support 14001
@@ -82,6 +83,7 @@ typedef uint64_t utime_t;
 #define error_file_buffer_not_enough    16001
 #define error_file_read_not_complete    16002
 #define error_file_buffer_init_small    16003
+#define error_file_buffer_too_large     16004
 
 //  ffmpeg
 #define error_ffmpeg_init_input         17001

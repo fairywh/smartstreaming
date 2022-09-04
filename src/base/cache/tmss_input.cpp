@@ -68,11 +68,6 @@ int InputHandler::origin_start() {
             origin_request.name,
             origin_request.params,
             demux);
-        /*ret = demux->ingest(origin_request.vhost,
-            origin_request.path,
-            origin_request.name,
-            origin_request.params,
-            input_conn);    //  */
         if (ret != 0) {
             tmss_error("ingest origin error,{},{}", ret, origin_request.to_str());
             continue;
@@ -86,26 +81,17 @@ int InputHandler::origin_start() {
 }
 
 int InputHandler::fetch_stream(char* buff, int wanted_size) {
-    // int read_size = input_conn->read(buff, wanted_size);
-    /*int read_size = io_buffer->read_bytes(buff, wanted_size);
-    if (read_size < 0) {
-        tmss_error("fetch stream failed, ret={}", read_size);
-        return read_size;
-    }
-    tmss_info("read data, {}, {}", read_size, PrintBuffer(buff, read_size));
-    return read_size;   //  */
     int read_size = client->read_data(buff, wanted_size);
     tmss_info("read data, {}/{}", read_size, wanted_size);
-    return read_size;
+    if (read_size > 0) {
+        return read_size;
+    } else {
+        return -1;
+    }
 }
 
 void InputHandler::init_conn(std::shared_ptr<IClientConn> conn) {
     input_conn = conn;
-
-    /*int in_buf_size = 1024 * 16;
-    char* in_buf = new char[in_buf_size];
-    std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(in_buf, in_buf_size);
-    io_buffer = std::make_shared<IOBuffer>(conn, buffer);   //  */
 }
 
 void InputHandler::init_format(std::shared_ptr<IDeMux> demux) {
@@ -245,7 +231,9 @@ int InputHandler::cycle_interleave() {
             break;
         }
         std::shared_ptr<IPacket> packet;
+        //  std::shared_ptr<IFrame> frame;
         ret = demux->handle_input(packet);
+        //  ret = demux->handle_input(frame);
         if (ret != error_success) {
             tmss_info("get packet from input failed, {}", ret);
             break;
@@ -253,7 +241,14 @@ int InputHandler::cycle_interleave() {
         if (packet) {
             tmss_info("get a new packet, size={}", packet->get_size());
             enqueue(packet);
+        } else {
+            tmss_error("packet null");
+            break;
         }
+        /*if (frame) {
+            tmss_info("get a new packet, size={}", frame->get_size());
+            enqueue(frame);
+        }   //*/
     }
     return ret;
 }

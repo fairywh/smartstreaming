@@ -32,7 +32,8 @@ OutputHandler::~OutputHandler() {
 }
 
 int OutputHandler::write_msg(char* buff, int size) {
-    tmss_info("write data, connid={}, {}, {}", output_conn->get_id(), size, PrintBuffer(buff, size));
+    tmss_info("write data, connid={}, {}, {}",
+        output_conn->get_id(), size, PrintBuffer(buff, (size > 100) ? 100 : size));
     //  return output_conn->write(buff, size);
     return client->write_data(buff, size);
 }
@@ -58,11 +59,11 @@ void OutputHandler::set_forward_url(const std::string& forward_url) {
 }
 
 std::shared_ptr<IContext> OutputHandler::get_context() {
-    return context;
+    return output_context;
 }
 
 void OutputHandler::set_context(std::shared_ptr<IContext> ctx) {
-    context = ctx;
+    output_context = ctx;
 }
 
 EOutputType OutputHandler::get_type() {
@@ -74,12 +75,13 @@ void OutputHandler::set_type(EOutputType type) {
 }
 
 int OutputHandler::init_output(std::shared_ptr<IContext> input_context) {
+    this->input_context = input_context;
     int out_buf_size = 1024 * 16;
     uint8_t* out_buf = new uint8_t[out_buf_size];
 
     return mux->init_output(out_buf, out_buf_size,
         this, write_packet,
-        static_cast<void*>(input_context.get()), static_cast<void*>(context.get()));
+        static_cast<void*>(input_context.get()), static_cast<void*>(output_context.get()));
 }
 
 int OutputHandler::run() {
@@ -126,14 +128,18 @@ int OutputHandler::cycle() {
     while (true) {
         if (is_stop) {
             tmss_info("output stop");
+            mux->send_status(404);
             break;
         }
         if (output_conn->is_stop()) {
             tmss_info("output conn stop");
+            mux->send_status(404);
             break;
         }
         std::shared_ptr<IPacket> packet;
+        //  std::shared_ptr<IFrame> frame;
         ret = dequeue(packet, 2 * 1000 * 1000);
+        //  ret = dequeue(frame, 2 * 1000 * 1000);
         if (ret != error_success) {
             // to do
             /*if (get_cache_time() - last_send_at > 10 * 1000) {
@@ -147,9 +153,11 @@ int OutputHandler::cycle() {
         }
         // check timeout
         if (packet) {
-            tmss_info("get the packet, size={}", packet->get_size());
+        //  if (frame) {
+            // tmss_info("get the packet, size={}", packet->get_size());
             mux->send_status(200);
             ret = mux->handle_output(packet);
+            //  ret = mux->handle_output(frame);
             if (ret != error_success) {
                 tmss_info("send packet to output failed, {}", ret);
                 break;
@@ -177,13 +185,10 @@ int OutputHandler::on_thread_stop() {
         // tmss_info("output_conn is already stop");
         output_conn->set_stop();
     }
-    // tmss_info("channel to delete output,channel_count={}", channel.use_count());
+
     if (channel.lock()) {
-        // tmss_info("channel delete output,channel_count={}", channel.use_count());
         channel.lock()->del_output(std::dynamic_pointer_cast<OutputHandler>(shared_from_this()));
     }
-
-    // tmss_info("output_conn ref_count={}", output_conn.use_count());
     output_pool->remove(std::dynamic_pointer_cast<OutputHandler>(shared_from_this()));
     tmss_info("output stop, conn_id={}", output_conn->get_id());
 

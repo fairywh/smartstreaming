@@ -54,6 +54,9 @@ class MediaSource : virtual public IUserHandler, public std::enable_shared_from_
     virtual int handle_play_file(std::shared_ptr<IClientConn> conn,
         std::shared_ptr<Request> req,
         std::shared_ptr<IServer> server);
+    virtual int handle_play_segment(std::shared_ptr<IClientConn> conn,
+        std::shared_ptr<Request> req,
+        std::shared_ptr<IServer> server);
 
     std::string create_channel_key(std::shared_ptr<Request> req);
 

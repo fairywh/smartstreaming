@@ -7,6 +7,7 @@
 #include "defs/err.hpp"
 #include <log/log.hpp>
 #include <util/timer.hpp>
+#include <util/util.hpp>
 
 
 namespace tmss {
@@ -56,9 +57,14 @@ int File::left_size() {
 
 int File::init_buffer(int new_size) {
     int ret = error_success;
-
+    tmss_info("reset buffer, old_size={}, new_size={}", size, new_size);
+    if (new_size >= 1024 * 1024 * 1024) {
+        tmss_error("reset error, ret={}", ret);
+        return error_file_buffer_too_large;
+    }
     if (this->data) {
         if (new_size < size) {
+            tmss_error("reset error, ret={}", ret);
             return error_file_buffer_init_small;
         }
         char* new_data = new char[new_size + 1];
@@ -80,8 +86,9 @@ int File::append(const char* buffer, int append_size) {
 
     if (append_size > left_size()) {
         // return error_file_buffer_not_enough;
-        init_buffer(16 * append_size);   // to do
+        init_buffer(16 * (Max(size, append_size) + 1));   // to do
         if (append_size > left_size()) {
+            tmss_error("file too large, append_size={}, left_size={}", append_size, left_size());
             return error_file_buffer_not_enough;
         }
     }
@@ -235,11 +242,6 @@ int FileInputHandler::cycle() {
                 origin_request.name,
                 origin_request.params,
                 demux);
-            /*ret = demux->ingest(origin_request.vhost,
-                origin_request.path,
-                origin_request.name,
-                origin_request.params,
-                input_conn);    //  */
             if (ret != 0) {
                 tmss_error("origin ingest error, {}", ret);
                 return ret;

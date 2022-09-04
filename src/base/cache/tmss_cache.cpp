@@ -23,17 +23,43 @@ int PacketQueue::enqueue(std::shared_ptr<IPacket> packet) {
     return ret;
 }
 
+int PacketQueue::enqueue(std::shared_ptr<IFrame> frame) {
+    int ret = error_success;
+    frame_queue.push(frame);
+    st_cond_broadcast(cond);
+    tmss_info("enqueue a packet, size={}", frame->get_size());
+    return ret;
+}
+
 int PacketQueue::dequeue(std::shared_ptr<IPacket> &packet, int timeout_us) {
     int ret = error_success;
     if (queue.empty()) {
+        tmss_info("queue is empty.wait {} us", timeout_us);
         st_cond_timedwait(cond, timeout_us);
         if (queue.empty()) {
+            tmss_info("finnaly queue is empty");
+            ret = error_queue_is_empty;
             return ret;
         }
     }
     packet = queue.front();
     queue.pop();
     tmss_info("get a packet from queue, size={}", packet->get_size());
+    return ret;
+}
+
+int PacketQueue::dequeue(std::shared_ptr<IFrame> &frame, int timeout_us) {
+    int ret = error_success;
+    if (frame_queue.empty()) {
+        tmss_info("queue is empty.wait {} us", timeout_us);
+        st_cond_timedwait(cond, timeout_us);
+        if (frame_queue.empty()) {
+            return ret;
+        }
+    }
+    frame = frame_queue.front();
+    frame_queue.pop();
+    tmss_info("get a packet from queue, size={}", frame->get_size());
     return ret;
 }
 

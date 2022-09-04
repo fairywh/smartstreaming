@@ -9,10 +9,10 @@
  */
 
 #pragma once
-#include <format/context.hpp>
-#include <format/mux.hpp>
-#include <format/demux.hpp>
-#include <format/packet.hpp>
+#include <format/base/context.hpp>
+#include <format/base/mux.hpp>
+#include <format/base/demux.hpp>
+#include <format/base/packet.hpp>
 
 namespace tmss {
 class RawDeMux : virtual public IDeMux {
@@ -24,6 +24,7 @@ class RawDeMux : virtual public IDeMux {
         void *opaque, int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
         void * input_context);
     virtual int handle_input(std::shared_ptr<IPacket>& packet);
+    virtual int handle_input(std::shared_ptr<IFrame>& frame);
     virtual int on_ingest(int content_length, const std::string& data_header);
     virtual int publish(std::shared_ptr<IClientConn> conn);
 
@@ -48,6 +49,7 @@ class RawMux : virtual public IMux {
         void *opaque, int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
         void * input_context, void* output_context);
     virtual int handle_output(std::shared_ptr<IPacket> packet);
+    virtual int handle_output(std::shared_ptr<IFrame> frame);
     virtual int play(std::shared_ptr<IClientConn> conn);
     virtual int forward(const std::string& forward_url,
         std::shared_ptr<IClientConn> conn);
@@ -71,6 +73,7 @@ class CommonPacket : public IPacket {
     int get_size();
     int64_t timestamp();
     void set_size(int size);
+    virtual bool is_key_frame();
 };
 
 class SimplePacket : public IPacket {
@@ -84,6 +87,7 @@ class SimplePacket : public IPacket {
     char* buffer();
     int get_size();
     int64_t timestamp();
+    virtual bool is_key_frame();
 };
 
 }  // namespace tmss

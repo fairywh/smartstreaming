@@ -7,3 +7,6 @@
 [submodule "3rdparty/srt"]
 	path = 3rdparty/srt
 	url = https://github.com/Haivision/srt.git
+[submodule "3rdparty/x264"]
+	path = 3rdparty/x264
+	url = https://code.videolan.org/videolan/x264.git

@@ -50,7 +50,7 @@ class Channel : public ICoroutineHandler {
     std::string             stream_id;          // file name in url
 
     int64_t                 idle_at;            // no input or output
-    int64_t     channel_exit_time;  // channel stop time
+    int64_t                 channel_exit_time;  // channel stop time
     EStatusChannel          status;
 
     std::shared_ptr<IContext> input_context;        // to do
@@ -96,15 +96,19 @@ class Channel : public ICoroutineHandler {
 
     void wake_up();
 
+    void check_and_sleep();
+
  public:
     // to do, static file cache, like hls
     // int get_segment(const std::string& name, std::shared_ptr<File> segment);
 
- private:
+    int add_segemt_cache(std::shared_ptr<SegmentsCache> cache);
+
+    int del_segment_cache();
     /*
     *   static file. like hls/dash
     */
-    std::vector<std::shared_ptr<SegmentsCache>> segment_cache_list;
+    std::shared_ptr<SegmentsCache> segment_cache;
 };
 
 class ChannelPool : public ICoroutineHandler {

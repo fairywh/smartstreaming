@@ -17,14 +17,14 @@ class IReader {
  public:
     virtual ~IReader() = default;
     virtual int read(char* buf, int size) = 0;
-    virtual int readv(const iovec *iov, int iov_size) { }
+    virtual int readv(const iovec *iov, int iov_size) { return 0;}
 };
 
 class IWriter {
  public:
     virtual ~IWriter() = default;
     virtual int write(const char* buf, int size) = 0;
-    virtual int writev(const iovec *iov, int iov_size) { }
+    virtual int writev(const iovec *iov, int iov_size) { return 0;}
 };
 
 class IReaderWriter : public IReader, public IWriter {

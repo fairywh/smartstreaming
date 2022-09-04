@@ -22,7 +22,6 @@ class HttpRequest : public Request {
  public:
     std::list<std::pair<std::string, std::string> > headers;
     bool ip_domain = false;
-    std::string ext;
 };
 
 class HttpResponse : public Response {

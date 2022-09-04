@@ -14,7 +14,7 @@
 
 #include <defs/err.hpp>
 #include <log/log.hpp>
-#include <format/demux.hpp>
+#include <format/base/demux.hpp>
 #include <util/util.hpp>
 #include <http_stack.hpp>
 
@@ -70,8 +70,8 @@ int HttpClient::request(const std::string& origin_host,
             tmss_info("http response complete,{}", response);
             break;
         }
-        tmss_info("response, {}, {}",
-            total_read_size, PrintBuffer(response, total_read_size));
+        //  tmss_info("response, {}, {}",
+            //  total_read_size, PrintBuffer(response, total_read_size));
     }
     if (once_read_size < 0) {
         tmss_error("ingest read error, {}", once_read_size);
@@ -87,7 +87,7 @@ int HttpClient::request(const std::string& origin_host,
     }
 
     tmss_info("http_first_packet, {}, {}",
-        total_read_size, PrintBuffer(response, total_read_size));
+        total_read_size, PrintBuffer(response, (total_read_size > 100) ? 100 : total_read_size));
 
     std::string http_first_packet(response, total_read_size);
     http_response.parseHttpResponse(http_first_packet);
@@ -111,7 +111,8 @@ int HttpClient::read_data(char* buf, int size) {
         tmss_error("fetch stream failed, ret={}", read_size);
         return read_size;
     }
-    tmss_info("read data, {}/{}, {}", read_size, size, PrintBuffer(buf, read_size));
+    tmss_info("read data, {}/{}, {}",
+        read_size, size, PrintBuffer(buf, (read_size > 100) ? 100 : read_size));
     return read_size;
 }
 

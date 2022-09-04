@@ -71,6 +71,10 @@ int RawDeMux::handle_input(std::shared_ptr<IPacket>& packet) {
     return 0;
 }
 
+int RawDeMux::handle_input(std::shared_ptr<IFrame>& frame) {
+    return 0;
+}
+
 int RawDeMux::on_ingest(int content_length, const std::string& data_header) {
     this->content_length = content_length;
     int ret = error_success;
@@ -83,7 +87,8 @@ int RawDeMux::on_ingest(int content_length, const std::string& data_header) {
     }
     int data_size = data_header.length();
     buffer->write_bytes(data_header.c_str(), data_size);
-    tmss_info("data_header, {}, {}", data_size, PrintBuffer(data_header.c_str(), data_size));
+    tmss_info("data_header, {}, {}",
+        data_size, PrintBuffer(data_header.c_str(), (data_size > 100) ? 100 : data_size));
     return ret;
 }
 
@@ -156,6 +161,10 @@ int RawMux::handle_output(std::shared_ptr<IPacket> packet) {
 
     // flush
     flush_write();
+    return 0;
+}
+
+int RawMux::handle_output(std::shared_ptr<IFrame> frame) {
     return 0;
 }
 
@@ -248,6 +257,10 @@ void CommonPacket::set_size(int size) {
     this->size = size;
 }
 
+bool CommonPacket::is_key_frame() {
+    return false;
+}
+
 SimplePacket::SimplePacket(char * buffer, int size) {
     this->size = size;
     ptr = buffer;
@@ -268,5 +281,8 @@ int64_t SimplePacket::timestamp() {
     return 0;
 }
 
+bool SimplePacket::is_key_frame() {
+    return false;
+}
 }  // namespace tmss
 
